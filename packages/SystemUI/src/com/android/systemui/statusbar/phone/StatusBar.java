@@ -5107,6 +5107,7 @@ public class StatusBar extends SystemUI implements DemoMode,
         final boolean inflated = mStackScroller != null;
 
         boolean useDarkTheme = false;
+        boolean useBlackAFTheme = false;
         if (mCurrentTheme == 0) {
             // The system wallpaper defines if QS should be light or dark.
             WallpaperColors systemColors = mColorExtractor
@@ -5115,12 +5116,41 @@ public class StatusBar extends SystemUI implements DemoMode,
                     && (systemColors.getColorHints() & WallpaperColors.HINT_SUPPORTS_DARK_THEME) != 0;
         } else {
             useDarkTheme = mCurrentTheme == 2;
+            useBlackAFTheme = userThemeSetting == 3;
         }
         if (isUsingDarkTheme() != useDarkTheme) {
             // Check for black and white accent so we don't end up
             // with white on white or black on black
-            unfuckBlackWhiteAccent();
-            ThemeAccentUtils.setLightDarkTheme(mOverlayManager, mCurrentUserId, useDarkTheme);
+
+                unfuckBlackWhiteAccent();
+                if (useDarkTheme) {
+                    unloadStockDarkTheme();
+                }
+            } catch (RemoteException e) {
+                Log.w(TAG, "Can't change theme", e);
+            }
+        }
+        if (isUsingBlackAFTheme() != useBlackAFTheme) {
+            try {
+                mOverlayManager.setEnabled("com.android.system.theme.blackaf",
+                        useBlackAFTheme, mCurrentUserId);
+                mOverlayManager.setEnabled("com.android.settings.theme.blackaf",
+                        useBlackAFTheme, mCurrentUserId);
+                mOverlayManager.setEnabled("com.android.dui.theme.blackaf",
+                        useBlackAFTheme, mCurrentUserId);
+                mOverlayManager.setEnabled("com.android.gboard.theme.blackaf",
+                        useBlackAFTheme, mCurrentUserId);
+                mOverlayManager.setEnabled("com.android.updater.theme.blackaf",
+                        useBlackAFTheme, mCurrentUserId);
+                // Check for black and white accent so we don't end up
+                // with white on white or black on black
+                unfuckBlackWhiteAccent();
+                if (useBlackAFTheme) {
+                    unloadStockDarkTheme();
+                }
+            } catch (RemoteException e) {
+                Log.w(TAG, "Can't change theme", e);
+            }
         }
 
         // Lock wallpaper defines the color of the majority of the views, hence we'll use it
